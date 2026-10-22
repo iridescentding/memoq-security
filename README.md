@@ -48,7 +48,21 @@ PowerShell 7：
 
 报告可能包含内部域名、证书主体、IP／端口、账号和软件版本；分享前脱敏，勿直接提交到公开仓库。JSON 中 HTTP.sys 的 Base64 字段是原始命令输出字节，不是私钥。
 
-## 怎样看结果
+## 怎样看结果：先读 TXT，再查 JSON
+
+1. 打开 `report.txt`，先看 `Scan status`、`SUMMARY`、`MATCHED ENTRIES` 和 `COVERAGE ISSUES`。
+2. `SUMMARY` 中最先看 `CompromisedEntriesOutsideDisallowed`、`CompromisedEntries` 和 `CoverageIssueCount`。不能只看第一行或退出码。
+3. 用 JSON 定位具体条目：`Summary` 是计数，`Certificates[]` 的 `Matches` 是分类，`Location` / `Store` / `InDisallowed` 是所在存储区，`CertificateSHA256` / `SpkiSHA256` 是检测依据。
+4. `TrustUpdateRegistry[]` 记录配置和缓存存在情况，`HttpSys` 记录绑定读取状态及原始输出，`CoverageIssues[]` 记录未完成的检查。
+
+| TXT 位置／字段 | JSON 对应位置 | 怎么用 |
+| --- | --- | --- |
+| `SUMMARY` 的各项计数 | `Summary.*` | 先判断是否有受损命中、是否存在非 Disallowed 条目 |
+| `MATCHED ENTRIES` | `Certificates[].Matches` 及条目元数据 | 定位实际证书，不按名称猜测 |
+| `STORE COVERAGE` | `Stores[].Status` / `Problem` | 确认哪些存储区缺失、不可读或只读到一部分 |
+| `TRUST UPDATE CONFIGURATION...` | `TrustUpdateRegistry[].Values[]` | 看策略值，不能据缓存存在判断已修复 |
+| `HTTP.sys: Read / Failed / Skipped` | `HttpSys.Status` / `Problem` / `Stdout` | 区分读取成功、读取失败、主动跳过；`Read` 不代表 TLS 安全 |
+| `COVERAGE ISSUES` | `CoverageIssues[].Scope` / `Problem` | 按错误对象补查，不能把失败当零风险 |
 
 | 字段 | 含义 |
 | --- | --- |
@@ -63,6 +77,105 @@ PowerShell 7：
 计数是存储区条目数，不是唯一证书或公钥数；DER 与 SPKI 命中可以重叠，不能相加。未部署 WebHosting 等存储区可能正常，但仍会列出读取缺口。退出码 0 仅表示报告写入完成，不代表安全或无覆盖缺口。
 
 远端可以在 TLS 握手时发送中间证书，因此本地没缓存受损中间 CA 并不排除风险。配置、缓存存在不等于已有效阻断；CurrentUser 不覆盖其他用户／服务身份；独立应用 CA 包、Java keystore、容器和实际 memoQ 请求路径不在本工具范围内。
+
+## 哪些结果需要紧急处理
+
+下面是**人工处置优先级建议**，不是脚本自动生成的漏洞等级；组织既有应急和变更流程优先。
+
+| 结果／现场证据 | 优先级与判断 | 对应处理 |
+| --- | --- | --- |
+| 现场已确认恶意冒充、异常数据外发，或凭据发送给了攻击端点 | **立即启动安全事件响应**。自查脚本本身不能发现或确认这些事实 | 联系安全团队，保留证书、时间、连接与应用日志；控制受影响通信路径；按实际暴露范围撤销会话、轮换凭据并调查数据影响。不要因单纯本地命中就断言凭据已泄露 |
+| 实际 memoQ／S2S／插件测试确认仍接受真实受损链 | **紧急修复验证器**，但尚不能据此证明发生过攻击；本工具不执行此测试 | 在修复与验证完成前，按组织应急流程限制相关敏感数据传输；执行下面方案 A，并按方案 F 验收 |
+| `Summary.CompromisedEntriesOutsideDisallowed > 0` | **高优先级核查，建议尽快当日处理**：受损证书或公钥出现在至少一个非 Disallowed 存储区；不等于已被信任、正在使用或已遭攻击 | 查看具体条目和受影响应用，执行方案 A；若业务叶证书链确实依赖受影响层级，另执行方案 B。不要先删证书 |
+| `CompromisedEntries > 0`，且 `CompromisedEntriesOutsideDisallowed = 0` | **仍需验证阻断覆盖**：本次命中的条目都在 Disallowed，但不能确认其他包装、账号和应用已阻断 | 保留阻断条目；按方案 A/F 检查交叉签名、服务账号、独立证书库与真实客户端。不要为了让命中数归零而删除 Disallowed 条目 |
+| `EnableDisallowedCertAutoUpdate=0` | **优先核查更新路径**：自动不受信任 CTL 更新被关闭 | 执行方案 C；若组织有有效的集中／离线分发，不一定是故障，但必须有实际分发与阻断证据 |
+| `DisableRootAutoUpdate=1` | **核查策略意图**：关闭自动受信任根更新；不等于自动不受信任 CTL 更新也关闭 | 执行方案 C，分别核实两类策略。不要为了此次事件盲目修改受信根策略 |
+| `CoverageIssueCount > 0`、`CompletedWithCoverageIssues`、`MissingOrInaccessible`、`Partial`，或 HTTP.sys `Failed` | **检查不完整，需补查**；不是“发现攻击”，也不是“没发现风险” | 执行方案 D；关键 Root／CA／Disallowed 无法读取应优先补查。明确未部署的 WebHosting 缺失可记录为适用范围限制 |
+| 只有 `KnownRelatedRootNotProofOfCompromise` / `NameOnlyNeedsChainReview` | **关联线索，不能直接报受损** | 执行方案 E，核对真实链；不要批量删除 AAA / emSign 根或按名称删除证书 |
+| 受损计数为 0，覆盖问题也为 0 | **仅本地清点未命中**，没有“安全通过”结论 | 继续按方案 F 验证实际应用；业务连接可能收到本地未缓存的中间证书 |
+
+`HttpSys.Status=Skipped` 表示指定了 `-SkipHttpSys`，不是读取失败；是否补查取决于该机器是否承载相关服务。相关软件的版本、服务 `Running`、`EncodedCtl` / `DisallowedCertEncodedCtl` / 同步时间值存在，都不是单独的修复验收证据。
+
+## 对应处理方案
+
+### 方案 A：受损证书／公钥命中，或应用仍接受受损链
+
+1. 保存本轮 TXT／JSON，记录命中条目的存储区、DER／SPKI 和时间。以哈希命中为依据，不依据证书名称或 SHA-1 单独判断事故范围。
+2. 识别实际验证者：译员／PM 的 memoQ 客户端、浏览器、发起 S2S 的子 TMS、运行 MT／AI 插件的机器、调用 API 的外部程序。管理员账号的结果不能代替服务账号。
+3. IT 统一核对 Windows 不受信任 CTL 分发和相关厂商更新，确认策略允许、更新源可达且实际生效；独立 CA 包／运行时按其厂商方案更新。Windows 更新不能自动代表所有独立应用完成修复。
+4. 对暂时无法获得更新的机器，由 IT 评估是否采用下文的精确证书阻断方案，先测试业务影响，记录变更前后状态，再按组织流程分发。不要批量移除根、删除 IIS 绑定或关闭证书验证。
+5. 按方案 F 验证目标应用确实拒绝相关链；本地扫描数值不能代替这一步。
+
+### 方案 B：合法业务证书需要迁移，或更新后无法连接
+
+由 IT／证书供应商核对实际握手链，确认是否依赖受影响层级。确需迁移时，取得受支持的替代证书链，按 memoQ 版本和实际部署更新 IIS、HTTP.sys、反向代理或其他 TLS 终止点；各入口分别验收，不只看 443，也不凭端口号猜测服务。
+
+若更换了被用于 S2S 子端身份的叶证书，还需检查父端登记证书、Server connection 关联及子端私钥可用性；这与父端 HTTPS 证书是两种角色。变更前留存配置与回退计划，防止只改一处导致客户端／S2S 断连。**不要用忽略证书错误、重新信任已受损链来恢复业务。**
+
+### 方案 C：信任更新配置异常、禁用或不明确
+
+分别确认自动受信根与不受信任 CTL 的策略、域策略覆盖、集中／离线分发方式，以及客户端实际获得的内容。字段未配置通常意味着默认行为，仍不能证明更新成功。离线环境使用 IT 管理的可信分发流程，不要临时从不明来源导入根证书。
+
+Microsoft 文档说明 CTL 管理与 WSUS 是独立概念，因此“WSUS 没有待装补丁”不能单独作为 CTL 已更新的证据。具体部署方式参考 [Microsoft CTL 官方说明](https://learn.microsoft.com/en-us/windows-server/identity/ad-cs/configure-trusted-roots-disallowed-certificates)。
+
+### 方案 D：覆盖缺口或报告生成失败
+
+按 `CoverageIssues` 的 Scope 和 Problem 处理：确认选择了正确的 Windows PowerShell／PowerShell 版本、64 位进程和已有本地输出目录。权限不足时在获准的管理员上下文重跑；仍需另查实际服务身份，不要给整个目录或私钥增加宽泛权限来消除报错。
+
+存储区确未部署时注明原因，不为消除警告创建空存储区。HTTP.sys 失败时核对其错误和系统 netsh 读取权限；SPKI 解析失败时该条目不能视为“已检查且无风险”，应交由 IT 使用可信工具复核。若文件不存在、截断或 JSON 无法解析，本轮视为未完成，不能用于安全判断。
+
+### 方案 E：仅相关根或名称线索
+
+相关根本身存在不代表根私钥泄露。证书主体／颁发者名称可伪造，也不能证明真实签名链。记录关联条目，在获准的验证流程中核对实际服务使用的完整链与应用信任行为。没有完整证据时保留“需核查”，不执行批量根删除。
+
+### 方案 F：怎样才算处理完成
+
+- 在实际客户端／服务账号、准确版本与实际 TLS 实现下验收：合法基线连接正常，错误名称和不受信链被拒绝，受损链／相关交叉路径被拒绝。
+- 分别验证 memoQ 桌面、Web、S2S、MT／AI、API 等实际启用路径。浏览器或普通 curl 的结果不能代替另一个应用；curl 的 TLS 后端也可能不同。
+- 保留证书验证错误及必要日志。超时、DNS 失败、HTTP 403 或业务错误不能当成“证书阻断成功”。测试使用研究者／厂商控制的端点或隔离环境，不向测试端点发送业务数据和真实凭据。
+- 重跑自查，确认报告完整、覆盖缺口已有解释或已补齐、变更与预期一致。**受损证书保留在 Disallowed 时继续命中是可能的，不要求所有匹配计数归零。**
+- 将应用结果、变更记录和限制写入验收记录。`SafetyConclusion` 仍会固定为 `NOT_ASSESSED`；本工具不会变成“安全通过”。
+
+上述主动连接、更新、证书替换或阻断均属于 IT 另行实施的验证／变更，**不是自查脚本的行为**。
+
+## 上游 Block-EmudhraCompromisedCA.ps1 能否复用
+
+可以作为 **IT 审批后的修复工具**评估复用，不能当作本仓库的只读自查脚本。[上游脚本](https://emudhra.we-have-a-problem.com/Block-EmudhraCompromisedCA.ps1)来自事件汇总站；该站不等同于 Microsoft 或 memoQ 官方发布渠道。
+
+2026-10-22 下载的源码已做静态审查，未在服务器执行。确认其行为：
+
+| 行为 | 审查结果 |
+| --- | --- |
+| 权限／依赖 | `#Requires -Version 5.1`、管理员权限、内置 PKI 模块。声明 5.1+ 不等于我们实测过该阻断脚本的所有 PS7 环境 |
+| 是否联网 | **会**：运行时下载 `impacted-intermediates.json` |
+| 完整性检查 | 在任何导入前校验固定 SHA-256；与我们独立核验的清单一致，共 16 张证书、8 个公钥 |
+| 写入对象 | 逐张 `Import-Certificate` 到 `Cert:\LocalMachine\Disallowed`，最后删除临时文件 |
+| 是否删除受信根 | 这版源码没有删除 Root 中的证书，也没有重启服务 |
+| 失败处理 | 非事务操作；若中间某张导入失败，之前导入的证书可能已经保留。必须检查实际结果，不得把非零退出当成“全部没改” |
+| 报告／回滚／验收 | 没有本仓库这种 TXT／JSON 清点报告，没有预先导出基线、自动回滚或真实应用阻断测试 |
+
+**企业管理设备不建议由个人逐台临时执行。** 按上游提示，由 IT 负责统一评估和分发；先确认是否已收到 Windows 阻断更新。对确需补充阻断的设备，可在组织批准后复用上游精确证书清单与导入逻辑，但仍需变更记录、失败核对和方案 F 的实际应用验收。
+
+上游网页示例使用 `-ExecutionPolicy Bypass`；本仓库不推荐照抄该参数。企业应采用既有审批／签名及软件分发流程，不以绕过策略作为解决运行错误的方法。
+
+此阻断主要面向使用 Windows 系统证书存储区和链验证的客户端（如相关 Schannel／Authenticode 路径）。独立 CA 包仍需单独更新。导入的是 16 张已知证书，不是部署一个通用的 SPKI 黑名单；不能由此承诺未来其他同公钥包装、全部用户和应用均已覆盖。网页上“证书已导入”不等于 memoQ／S2S 已完成验收。
+
+若固定清单哈希校验失败，应停止、核查上游变更，不能删除检查或随意替换哈希来强行运行。供审计比对的本次源码与清单哈希如下；上游以后可能更新，下载后应重新审查。
+
+```text
+0C758183E511C535CDCD58EE97B4712A76BCA3963E72634DCB29AF2A0B8424B3  上游阻断脚本源码
+F67B3ABE9B4879F4E91874ED041BECCD71257F1DB41C588C724CCF12AA90C59E  其固定的 impacted-intermediates.json 清单
+```
+
+## 三个最容易误判的示例
+
+下面仅为字段示例，不是任何客户机器的实际扫描结果。
+
+| TXT / JSON 摘要 | 正确理解 | 应做什么 |
+| --- | --- | --- |
+| DER=1、SPKI=1、`CompromisedEntries=1`、`CompromisedEntriesOutsideDisallowed=1` | 同一条目可以同时命中 DER 和 SPKI；不是两张证书。至少一个受损条目不在 Disallowed | 高优先级执行方案 A，确认实际链和验证器；不直接判断已被攻击 |
+| DER=1、SPKI=1、`CompromisedEntries=1`、`CompromisedEntriesOutsideDisallowed=0` | 已知受损条目在 Disallowed，继续命中不一定是修复失败 | 不删除阻断条目；核对应用与交叉路径，按方案 F 验收 |
+| DER=0、SPKI=0、`CoverageIssueCount=0`，可能只有相关根 | 本地已读范围未命中；不能回答远端链会不会被接受 | 不因相关根存在而删除它；继续验证实际应用 |
 
 ## 对 memoQ 的风险
 
