@@ -1,10 +1,36 @@
 # memoQ security
 
-面向 memoQ TMS 运维的 Windows 本地只读自查工具。首个工具针对 2026 年 10 月 eMudhra / emSign 中间 CA 密钥事件；**不判断机器是否安全，也不是 memoQ 官方工具或修复补丁。**
+面向 memoQ TMS 运维的 Windows 安全自查与处置资料，针对 2026 年 10 月 eMudhra / emSign 中间 CA 密钥事件。**本仓库不是 memoQ 官方工具，也不提供“机器已安全”的自动判定。**
 
-事件背景与公开指标：[eMudhra Intermediate CA Compromise](https://emudhra.we-have-a-problem.com/)。其中的在线测试、阻断／修复脚本与本仓库的只读清点脚本是不同工具；本仓库脚本不执行网站上的修复步骤。
+事件背景与公开指标：[eMudhra Intermediate CA Compromise](https://emudhra.we-have-a-problem.com/)。根目录的 `Test-*.ps1` 是只读自查；`mitigation/` 单独保存**会联网、会修改不受信任证书存储区**的上游阻断脚本。自查不会自动调用阻断脚本。
 
-## 选哪个脚本
+| 用途 | 文件位置 | 对系统的影响 | 验证状态 |
+| --- | --- | --- | --- |
+| 本地只读自查 | 根目录 `Test-EmudhraCA-PS51.ps1` / `Test-EmudhraCA-PS7.ps1` | 不联网、不改证书或配置，仅生成 TXT／JSON | 两版各 61/61 项检查通过，见 [验证记录](VALIDATION.md) |
+| IT 审批后补充阻断 | [mitigation/Block-EmudhraCompromisedCA.ps1](mitigation/Block-EmudhraCompromisedCA.ps1) | 联网下载清单，向 `LocalMachine\Disallowed` 导入 16 张证书 | 上游原样副本；仅静态审查和哈希核对，**未执行、未做阻断实测** |
+
+## 自查之后能不能直接运行阻断脚本？
+
+**不能把“自查运行成功”理解成“可以直接阻断”，也不能把“零匹配”理解成“已经安全”。** 自查回答的是本地有什么、哪些地方没读到；阻断是否必要以及是否有效，要结合系统更新和实际应用判断。
+
+按下面流程执行；每一步达成条件后再进入下一步，不能把两个脚本串成一键命令：
+
+1. **先自查并保存基线。** 在 Windows Server 和相关 Windows 客户端分别运行合适版本，保存 TXT／JSON。先处理读取失败、关键覆盖缺口；报告完整只代表清点完成。
+2. **由 IT 判断是否需要补充阻断。** 核对 Windows CTL／厂商更新是否已生效，以及目标软件是否使用 Windows 系统证书验证。已有有效阻断时，无需重复运行此补救脚本；使用独立 CA 包的软件应走其自身更新流程。企业设备由 IT 统一安排，不由普通用户临时执行。
+3. **确有需要时，先测试和审批。** 保存变更前状态、确认合法业务证书链、准备故障处置方案；在获准的测试机／试点机验证。这个上游脚本没有预演模式，不能加 `-WhatIf` 当作无修改试跑。
+4. **批准后才实施。** 按 [阻断操作流程](mitigation/README.md) 校验文件，在管理员 Windows PowerShell 中执行并记录输出和退出码；不要绕过执行策略。中途报错要核对是否部分导入，不可当作“什么都没改”。
+5. **先核对导入，再验收应用。** 重跑自查，用完整 DER SHA-256 逐一核对 16 张证书的机器级 Disallowed 条目；然后验证实际 memoQ 客户端、Web、S2S 和插件的正常业务与证书拒绝行为。**证书导入成功不等于防护验收完成。**
+
+| 自查或现场情况 | 下一步 |
+| --- | --- |
+| 报告报错、缺文件，或关键存储区未读全 | 先补查；不能据不完整报告自动决定阻断 |
+| 受损条目在非 Disallowed 存储区 | 优先调查实际信任与使用情况，按上面第 2 步决定处置；不是“发现即运行” |
+| 只在 Disallowed 命中，或已确认系统／应用更新有效 | 保留已有阻断，验收覆盖；不为清零计数重复操作或删除条目 |
+| 零匹配，或只有相关根／名称线索 | 继续核实更新和实际应用；既不是安全证明，也不是直接阻断的理由 |
+
+完整适用范围、执行风险、执行命令及导入后核对示例见 [mitigation/README.md](mitigation/README.md)。
+
+## 只读自查：选哪个脚本
 
 | 运行环境 | 文件 | 启动程序 |
 | --- | --- | --- |
@@ -13,7 +39,7 @@
 
 两个文件均可单独运行，无第三方模块依赖；检查范围和指标相同，只接受对应运行时。PS7 版仍是 **Windows 专用**，不适用于 macOS / Linux。脚本不会安装 PowerShell。先用 `$PSVersionTable` 查看版本，再选择文件。
 
-## 运行
+## 运行只读自查
 
 先下载并检查脚本，在对应的 PowerShell 窗口进入脚本目录。输出父目录必须已经存在、位于本地，不能是网络盘或包含目录联接／符号链接的路径。
 
@@ -42,7 +68,7 @@ PowerShell 7：
 - 相关服务、卸载注册表中的软件线索；不调用 Win32_Product，不启动 Python、Java、Node、Git 等工具。
 - 默认调用系统 `netsh.exe http show sslcert`，只读 HTTP.sys 绑定，保留原语言文本及原始输出字节，不依赖英文标签解析。
 
-## 只读边界
+## 只读自查的边界
 
 仅创建报告目录及 TXT／JSON。**不联网、不下载、不构建证书链、不查询 CRL／OCSP、不读取私钥、不增删证书、不改注册表／信任配置／执行策略、不重启服务、不上传报告。**
 
@@ -140,7 +166,7 @@ Microsoft 文档说明 CTL 管理与 WSUS 是独立概念，因此“WSUS 没有
 
 ## 上游 Block-EmudhraCompromisedCA.ps1 能否复用
 
-可以作为 **IT 审批后的修复工具**评估复用，不能当作本仓库的只读自查脚本。[上游脚本](https://emudhra.we-have-a-problem.com/Block-EmudhraCompromisedCA.ps1)来自事件汇总站；该站不等同于 Microsoft 或 memoQ 官方发布渠道。
+可以作为 **IT 审批后的修复工具**评估复用，不能当作本仓库的只读自查脚本。[上游脚本](https://emudhra.we-have-a-problem.com/Block-EmudhraCompromisedCA.ps1)来自事件汇总站；该站不等同于 Microsoft 或 memoQ 官方发布渠道。本仓库在 [mitigation/](mitigation/README.md) 保存这版原样副本、来源记录和验证清单，与只读脚本分开。
 
 2026-10-22 下载的源码已做静态审查，未在服务器执行。确认其行为：
 
@@ -196,4 +222,4 @@ S2S：分别检查子 TMS 对父 TMS 的服务端身份验证，以及父 TMS �
 - [HTTP.sys 命令说明](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/netsh-http)
 - [memoQ S2S 工作流](https://docs.memoq.com/current/en/Concepts/concepts-s2s.html) / [Server connection 配置](https://docs.memoq.com/current/en/Workspace/server-connection-properties.html)
 
-此工具不会执行网站上的主动网络测试或本地阻断操作；任何实际修复需按组织变更流程评估。
+根目录的只读自查脚本不会执行网站上的主动网络测试或本地阻断操作；`mitigation/` 阻断脚本会修改系统，必须单独按组织变更流程评估和实施。

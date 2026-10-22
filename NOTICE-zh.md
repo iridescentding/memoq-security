@@ -15,3 +15,5 @@ IT运维老师您好：eMudhra事件对S2S的主要风险，是子TMS在连接�
 Windows 本地只读自查：[PowerShell 5.1 版](Test-EmudhraCA-PS51.ps1) / [PowerShell 7 版](Test-EmudhraCA-PS7.ps1)，使用步骤见 [README](README.md)。两版均不联网、不改证书或配置，仅生成本地 TXT／JSON。请按运行时选择，输出父目录需已存在；勿绕过组织安全策略。
 
 **自查零匹配不代表安全，不能替代实际 memoQ／S2S 证书验证验收。报告分享前请脱敏。**
+
+仓库另附 [IT 阻断处置流程与上游脚本](mitigation/README.md)。该脚本会联网并修改系统证书存储区，不能因自查运行成功就直接执行；企业设备由 IT 评估、测试后统一部署。阻断脚本尚未实机执行验证。
