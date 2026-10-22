@@ -1,59 +1,62 @@
-# 验证记录
+# Validation record
 
-**本页的 61/61 项实测仅适用于两版 `Test-EmudhraCA-*.ps1` 只读自查脚本，不适用于 `mitigation/` 阻断脚本。** 阻断脚本仅核对上游原始字节、固定清单及 16 个 DER／8 个 SPKI 指纹，未在本机或任何服务器执行；真实导入、失败后的部分状态、应用阻断及业务兼容性均未实测。其来源与静态核验记录见 [mitigation/UPSTREAM.md](mitigation/UPSTREAM.md)。
+English | [简体中文](VALIDATION-zh.md)
 
-脚本版本：1.1.0；报告格式：1.2；指标快照：2026-10-22。
+**The 61/61 results apply only to the read-only `Test-EmudhraCA-*.ps1` scripts, not the blocker in `mitigation/`.** The blocker was checked against upstream bytes and its pinned manifest, including 16 DER and 8 SPKI hashes. It has not been executed locally or on any server. Imports, partial failure, application enforcement and business compatibility remain untested. See [provenance](mitigation/UPSTREAM.md).
 
-## 本次实测
+Audit version: 1.1.0. Report schema: 1.2. Indicator snapshot: 2026-10-22. The English edition changes documentation only; all three PowerShell files retain their previously reviewed bytes.
 
-2026-10-22（北京时间），在同一台 Windows NT 10.0.26100 服务器、管理员身份下运行两版最终源码。Windows PowerShell 的原有 LocalMachine 执行策略为 RemoteSigned；两次测试中各运行时的执行策略列表在运行前后均一致，没有使用覆盖参数。
+## Live audit tests
 
-| 项目 | PS 5.1 版 | PS 7 版 |
+On 2026-10-22 (Asia/Shanghai), both final audit variants ran as administrator on the same Windows NT 10.0.26100 server. The existing Windows PowerShell LocalMachine execution policy was RemoteSigned. Each runtime's policy list was unchanged before/after testing; no overrides were used.
+
+| Check | PS 5.1 variant | PS 7 variant |
 | --- | --- | --- |
-| 实际运行时 | 5.1.26100.32370 / Desktop，64 位 | 7.6.4 / Core，64 位 |
-| 验证完成时间 | 2026-10-22 11:50:06 +08:00 | 2026-10-22 11:49:43 +08:00 |
-| PowerShell 解析错误 | 0 | 0 |
-| 自动检查 | 61 / 61 通过 | 61 / 61 通过 |
-| 默认运行 | 退出 0，约 1074 ms | 退出 0，约 1386 ms |
-| SkipHttpSys | 退出 0，约 926 ms | 退出 0，约 1189 ms |
-| TXT / JSON | 均生成、非空、可读、计数一致 | 均生成、非空、可读、计数一致 |
-| HTTP.sys | 读取成功，中文可读，原始字节可往返 | 读取成功，中文可读，原始字节可往返 |
-| 缺失输出父目录、UNC 路径 | 均失败退出且不生成报告 | 均失败退出且不生成报告 |
+| Actual runtime | 5.1.26100.32370 / Desktop, 64-bit | 7.6.4 / Core, 64-bit |
+| Validation completed | 2026-10-22 11:50:06 +08:00 | 2026-10-22 11:49:43 +08:00 |
+| PowerShell parse errors | 0 | 0 |
+| Automated checks | 61 / 61 passed | 61 / 61 passed |
+| Default run | Exit 0, about 1074 ms | Exit 0, about 1386 ms |
+| SkipHttpSys run | Exit 0, about 926 ms | Exit 0, about 1189 ms |
+| TXT / JSON | Generated, nonempty, readable, consistent counts | Generated, nonempty, readable, consistent counts |
+| HTTP.sys | Read successfully, Chinese readable, raw bytes round-trip | Read successfully, Chinese readable, raw bytes round-trip |
+| Missing output parent / UNC | Rejected with failure exit and no reports | Rejected with failure exit and no reports |
 
-两运行时的清点摘要一致。这说明已测服务器上的清点与报告生成功能一致，**不说明应用信任行为一致，也不构成安全结论**。
+Inventory summaries agreed. This supports inventory/report functionality on the tested server, **not equivalent application trust behavior or a safety conclusion**.
 
-## 检查覆盖
+## Check coverage
 
-- 4 个只含公开证书的合成样本：RSA、EC、无显式版本的 X.509 v1，以及同公钥不同证书包装；使用独立 OpenSSL 结果核对 DER/SPKI。
-- DER/SPKI 双匹配、同公钥匹配、相关上级、仅名称线索、无匹配、Disallowed 标志、4 组畸形 DER 拒绝。
-- 默认与 SkipHttpSys、含空格路径、重复运行不覆盖、缺失父目录、UNC 在访问前拒绝。
-- JSON 可解析、TXT/JSON 计数一致、14 个存储区尝试被记录、报告内运行时及源码哈希正确。
-- HTTP.sys 原始字节往返、中文输出可读；SkipHttpSys 不启动 netsh。
-- 同一运行时的两次完整清点之间，证书指纹清单和所报告信任配置一致；执行策略前后未改变。
-- 报告经外层验证器读回，逐文件核对 SHA-256。脚本自身无远程执行或上传功能。
+- Four public-certificate-only synthetic fixtures: RSA, EC, X.509 v1 without an explicit version, and different wrappers sharing a key; DER/SPKI checked against independent OpenSSL calculations.
+- Combined DER/SPKI matches, same-key matches, related parents, name-only clues, no match, Disallowed classification and four malformed-DER rejection cases.
+- Default/SkipHttpSys, spaces in paths, repeat runs without overwriting, absent parent directories and UNC rejection before access.
+- Parseable JSON, consistent TXT/JSON counts, all 14 store attempts recorded and correct runtime/source-hash metadata.
+- HTTP.sys byte round-trip and readable Chinese; SkipHttpSys does not launch netsh.
+- Certificate fingerprint inventories and reported trust configuration agreed between the two full inventories in each runtime. Execution policies were unchanged.
+- Reports were read back by an external test controller and each file's SHA-256 verified. The audits themselves provide no remote-execution or upload feature.
 
-样本只在内存中加载，没有安装到证书存储区。未向服务器传输测试私钥，没有修改证书／信任／HTTP.sys 配置。
+Fixtures were loaded only in memory, not installed. No test private keys were transferred. Certificate/trust/HTTP.sys configuration was not changed.
 
-## 已检查的实现边界
+## Implementation review
 
-存储区仅使用 ReadOnly / OpenExistingOnly；注册表仅只读 OpenSubKey；不调用证书链／吊销 API；不读取私钥；不使用 Win32_Product。唯一子进程为系统 netsh 的只读绑定查询。磁盘写入仅限新报告目录下 TXT／JSON。
+Stores use ReadOnly / OpenExistingOnly; registry keys open read-only. There are no chain/revocation APIs, private-key reads or Win32_Product queries. The sole child process is system netsh's read-only binding query. Writes are limited to TXT/JSON in a new report directory.
 
-未抓包，不能把实现检查写成“已测得操作系统全程没有网络流量”；Windows 及其他服务自己的后台活动不由本脚本控制。
+No packet capture was performed. Source inspection is not a measurement proving that the entire OS generated no network traffic; unrelated Windows/services background activity is outside the audits' control.
 
-## 尚未验证
+## Not validated
 
-- 其他 Windows 版本、非管理员身份、其他服务账号，以及 PowerShell 7 的其他小版本。
-- 真实缺失／不可访问存储区、网络映射盘和重解析点的现场故障注入；实现会拒绝／报告，但本次没有为测试改动系统环境。
-- memoQ 客户端、S2S、MT／AI 插件等实际请求路径的证书阻断效果。
-- 完整证书链、吊销状态、CTL 新鲜度、独立应用信任库、攻击是否发生。
+- Other Windows versions, non-administrator/service identities or other PowerShell 7 minor versions.
+- Live fault injection for inaccessible stores, mapped network drives or reparse points. Code rejects/reports these cases, but the environment was not changed to exercise them.
+- Actual memoQ desktop, S2S, MT/AI or API certificate-blocking behavior.
+- Complete chains, revocation status, CTL freshness, independent application stores or whether an attack occurred.
+- Any runtime execution or effectiveness of the mitigation script.
 
-## 源码 SHA-256
+## Audit source SHA-256
 
 ```text
 FDC2D6BF4512A5D3820D390072F2665AB7FEA8AECF3159FE785E73B84614266C  Test-EmudhraCA-PS51.ps1
 ADDAE1B5B650E9C25E3B5762BD6E8B4531401DF9D2C4EA214EA6DD36683B1232  Test-EmudhraCA-PS7.ps1
 ```
 
-两份脚本除运行时最低版本、运行时校验与相应提示外，扫描与报告逻辑相同。PowerShell 7 兼容不是通过关闭检查或切回 5.1 实现的；它在 pwsh.exe 下实际运行。
+The variants differ only in minimum runtime/version guards and related messages. PS7 actually ran under `pwsh.exe`, without bypassing checks or delegating to 5.1.
 
-公开验证摘要见 [validation-summary.json](validation-summary.json)。原始服务器报告含运维信息，未上传公开仓库。
+The sanitized [validation summary](validation-summary.json) is public. Raw server reports contain operational information and are not published.
