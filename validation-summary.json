@@ -1,0 +1,567 @@
+{
+  "version": "1.1.0",
+  "tests": [
+    {
+      "script": "Test-EmudhraCA-PS51.ps1",
+      "source_sha256": "FDC2D6BF4512A5D3820D390072F2665AB7FEA8AECF3159FE785E73B84614266C",
+      "time": "2026-10-22T11:50:06.7665512+08:00",
+      "powershell_version": "5.1.26100.32370",
+      "is_64_bit": true,
+      "os_kernel": "10.0.26100",
+      "parse_errors": 0,
+      "checks_passed": 61,
+      "checks_total": 61,
+      "checks": [
+        {
+          "Name": "rsa_a DER hash agrees with OpenSSL fixture",
+          "Passed": true
+        },
+        {
+          "Name": "rsa_a SPKI agrees with independent OpenSSL calculation",
+          "Passed": true
+        },
+        {
+          "Name": "rsa_b DER hash agrees with OpenSSL fixture",
+          "Passed": true
+        },
+        {
+          "Name": "rsa_b SPKI agrees with independent OpenSSL calculation",
+          "Passed": true
+        },
+        {
+          "Name": "rsa_v1 DER hash agrees with OpenSSL fixture",
+          "Passed": true
+        },
+        {
+          "Name": "rsa_v1 SPKI agrees with independent OpenSSL calculation",
+          "Passed": true
+        },
+        {
+          "Name": "ec DER hash agrees with OpenSSL fixture",
+          "Passed": true
+        },
+        {
+          "Name": "ec SPKI agrees with independent OpenSSL calculation",
+          "Passed": true
+        },
+        {
+          "Name": "Cross-wrapper fixtures have different DER and the same SPKI",
+          "Passed": true
+        },
+        {
+          "Name": "Exact fixture matches DER and SPKI",
+          "Passed": true
+        },
+        {
+          "Name": "Alternate certificate wrapper matches same public key only",
+          "Passed": true
+        },
+        {
+          "Name": "V1 certificate with no explicit version parses",
+          "Passed": true
+        },
+        {
+          "Name": "Related-root fixture is not marked compromised",
+          "Passed": true
+        },
+        {
+          "Name": "Disallowed location flag is retained",
+          "Passed": true
+        },
+        {
+          "Name": "Unmatched certificate has no finding",
+          "Passed": true
+        },
+        {
+          "Name": "Name-only clue does not become a public-key finding",
+          "Passed": true
+        },
+        {
+          "Name": "Reject malformed DER ",
+          "Passed": true
+        },
+        {
+          "Name": "Reject malformed DER MAA=",
+          "Passed": true
+        },
+        {
+          "Name": "Reject malformed DER MII=",
+          "Passed": true
+        },
+        {
+          "Name": "Reject malformed DER MIP///8=",
+          "Passed": true
+        },
+        {
+          "Name": "Valid fixtures produce no coverage errors",
+          "Passed": true
+        },
+        {
+          "Name": "default expected exit code (actual=0)",
+          "Passed": true
+        },
+        {
+          "Name": "default creates exactly one fresh report directory",
+          "Passed": true
+        },
+        {
+          "Name": "default writes only the two report files",
+          "Passed": true
+        },
+        {
+          "Name": "default JSON safety conclusion",
+          "Passed": true
+        },
+        {
+          "Name": "default TXT safety conclusion",
+          "Passed": true
+        },
+        {
+          "Name": "default all 14 store attempts recorded",
+          "Passed": true
+        },
+        {
+          "Name": "default JSON certificate count reconciles",
+          "Passed": true
+        },
+        {
+          "Name": "default TXT/JSON count agreement",
+          "Passed": true
+        },
+        {
+          "Name": "default coverage issue count reconciles",
+          "Passed": true
+        },
+        {
+          "Name": "default 16 certificate and 8 key indicators retained",
+          "Passed": true
+        },
+        {
+          "Name": "default runtime edition agrees",
+          "Passed": true
+        },
+        {
+          "Name": "default source hash agrees",
+          "Passed": true
+        },
+        {
+          "Name": "default no whole-certificate/key fields",
+          "Passed": true
+        },
+        {
+          "Name": "Default run captures successful HTTP.sys output",
+          "Passed": true
+        },
+        {
+          "Name": "Native output round-trips to exact captured bytes",
+          "Passed": true
+        },
+        {
+          "Name": "Native output header is legible on this Chinese Windows host",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http expected exit code (actual=0)",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http creates exactly one fresh report directory",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http writes only the two report files",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http JSON safety conclusion",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http TXT safety conclusion",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http all 14 store attempts recorded",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http JSON certificate count reconciles",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http TXT/JSON count agreement",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http coverage issue count reconciles",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http 16 certificate and 8 key indicators retained",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http runtime edition agrees",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http source hash agrees",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http no whole-certificate/key fields",
+          "Passed": true
+        },
+        {
+          "Name": "SkipHttpSys avoids invocation",
+          "Passed": true
+        },
+        {
+          "Name": "missing-directory expected exit code (actual=1)",
+          "Passed": true
+        },
+        {
+          "Name": "missing-directory creates no report",
+          "Passed": true
+        },
+        {
+          "Name": "unc-rejected-before-io expected exit code (actual=1)",
+          "Passed": true
+        },
+        {
+          "Name": "unc-rejected-before-io creates no report",
+          "Passed": true
+        },
+        {
+          "Name": "Repeated runs preserve both report directories",
+          "Passed": true
+        },
+        {
+          "Name": "default reports not overwritten",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http reports not overwritten",
+          "Passed": true
+        },
+        {
+          "Name": "Certificate inventory stable between full and skipped runs",
+          "Passed": true
+        },
+        {
+          "Name": "Reported trust configuration stable across runs",
+          "Passed": true
+        },
+        {
+          "Name": "Execution policies unchanged",
+          "Passed": true
+        }
+      ],
+      "cases": [
+        {
+          "Name": "default",
+          "ExitCode": 0,
+          "DurationMs": 1074
+        },
+        {
+          "Name": "skip-http",
+          "ExitCode": 0,
+          "DurationMs": 926
+        },
+        {
+          "Name": "missing-directory",
+          "ExitCode": 1,
+          "DurationMs": 382
+        },
+        {
+          "Name": "unc-rejected-before-io",
+          "ExitCode": 1,
+          "DurationMs": 298
+        }
+      ],
+      "execution_policies_unchanged": true,
+      "scope": "Function fixtures and Windows local inventory/report generation; not memoQ/S2S TLS enforcement or network capture."
+    },
+    {
+      "script": "Test-EmudhraCA-PS7.ps1",
+      "source_sha256": "ADDAE1B5B650E9C25E3B5762BD6E8B4531401DF9D2C4EA214EA6DD36683B1232",
+      "time": "2026-10-22T11:49:43.6438401+08:00",
+      "powershell_version": "7.6.4",
+      "is_64_bit": true,
+      "os_kernel": "10.0.26100",
+      "parse_errors": 0,
+      "checks_passed": 61,
+      "checks_total": 61,
+      "checks": [
+        {
+          "Name": "rsa_a DER hash agrees with OpenSSL fixture",
+          "Passed": true
+        },
+        {
+          "Name": "rsa_a SPKI agrees with independent OpenSSL calculation",
+          "Passed": true
+        },
+        {
+          "Name": "rsa_b DER hash agrees with OpenSSL fixture",
+          "Passed": true
+        },
+        {
+          "Name": "rsa_b SPKI agrees with independent OpenSSL calculation",
+          "Passed": true
+        },
+        {
+          "Name": "rsa_v1 DER hash agrees with OpenSSL fixture",
+          "Passed": true
+        },
+        {
+          "Name": "rsa_v1 SPKI agrees with independent OpenSSL calculation",
+          "Passed": true
+        },
+        {
+          "Name": "ec DER hash agrees with OpenSSL fixture",
+          "Passed": true
+        },
+        {
+          "Name": "ec SPKI agrees with independent OpenSSL calculation",
+          "Passed": true
+        },
+        {
+          "Name": "Cross-wrapper fixtures have different DER and the same SPKI",
+          "Passed": true
+        },
+        {
+          "Name": "Exact fixture matches DER and SPKI",
+          "Passed": true
+        },
+        {
+          "Name": "Alternate certificate wrapper matches same public key only",
+          "Passed": true
+        },
+        {
+          "Name": "V1 certificate with no explicit version parses",
+          "Passed": true
+        },
+        {
+          "Name": "Related-root fixture is not marked compromised",
+          "Passed": true
+        },
+        {
+          "Name": "Disallowed location flag is retained",
+          "Passed": true
+        },
+        {
+          "Name": "Unmatched certificate has no finding",
+          "Passed": true
+        },
+        {
+          "Name": "Name-only clue does not become a public-key finding",
+          "Passed": true
+        },
+        {
+          "Name": "Reject malformed DER ",
+          "Passed": true
+        },
+        {
+          "Name": "Reject malformed DER MAA=",
+          "Passed": true
+        },
+        {
+          "Name": "Reject malformed DER MII=",
+          "Passed": true
+        },
+        {
+          "Name": "Reject malformed DER MIP///8=",
+          "Passed": true
+        },
+        {
+          "Name": "Valid fixtures produce no coverage errors",
+          "Passed": true
+        },
+        {
+          "Name": "default expected exit code (actual=0)",
+          "Passed": true
+        },
+        {
+          "Name": "default creates exactly one fresh report directory",
+          "Passed": true
+        },
+        {
+          "Name": "default writes only the two report files",
+          "Passed": true
+        },
+        {
+          "Name": "default JSON safety conclusion",
+          "Passed": true
+        },
+        {
+          "Name": "default TXT safety conclusion",
+          "Passed": true
+        },
+        {
+          "Name": "default all 14 store attempts recorded",
+          "Passed": true
+        },
+        {
+          "Name": "default JSON certificate count reconciles",
+          "Passed": true
+        },
+        {
+          "Name": "default TXT/JSON count agreement",
+          "Passed": true
+        },
+        {
+          "Name": "default coverage issue count reconciles",
+          "Passed": true
+        },
+        {
+          "Name": "default 16 certificate and 8 key indicators retained",
+          "Passed": true
+        },
+        {
+          "Name": "default runtime edition agrees",
+          "Passed": true
+        },
+        {
+          "Name": "default source hash agrees",
+          "Passed": true
+        },
+        {
+          "Name": "default no whole-certificate/key fields",
+          "Passed": true
+        },
+        {
+          "Name": "Default run captures successful HTTP.sys output",
+          "Passed": true
+        },
+        {
+          "Name": "Native output round-trips to exact captured bytes",
+          "Passed": true
+        },
+        {
+          "Name": "Native output header is legible on this Chinese Windows host",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http expected exit code (actual=0)",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http creates exactly one fresh report directory",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http writes only the two report files",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http JSON safety conclusion",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http TXT safety conclusion",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http all 14 store attempts recorded",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http JSON certificate count reconciles",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http TXT/JSON count agreement",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http coverage issue count reconciles",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http 16 certificate and 8 key indicators retained",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http runtime edition agrees",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http source hash agrees",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http no whole-certificate/key fields",
+          "Passed": true
+        },
+        {
+          "Name": "SkipHttpSys avoids invocation",
+          "Passed": true
+        },
+        {
+          "Name": "missing-directory expected exit code (actual=1)",
+          "Passed": true
+        },
+        {
+          "Name": "missing-directory creates no report",
+          "Passed": true
+        },
+        {
+          "Name": "unc-rejected-before-io expected exit code (actual=1)",
+          "Passed": true
+        },
+        {
+          "Name": "unc-rejected-before-io creates no report",
+          "Passed": true
+        },
+        {
+          "Name": "Repeated runs preserve both report directories",
+          "Passed": true
+        },
+        {
+          "Name": "default reports not overwritten",
+          "Passed": true
+        },
+        {
+          "Name": "skip-http reports not overwritten",
+          "Passed": true
+        },
+        {
+          "Name": "Certificate inventory stable between full and skipped runs",
+          "Passed": true
+        },
+        {
+          "Name": "Reported trust configuration stable across runs",
+          "Passed": true
+        },
+        {
+          "Name": "Execution policies unchanged",
+          "Passed": true
+        }
+      ],
+      "cases": [
+        {
+          "Name": "default",
+          "ExitCode": 0,
+          "DurationMs": 1386
+        },
+        {
+          "Name": "skip-http",
+          "ExitCode": 0,
+          "DurationMs": 1189
+        },
+        {
+          "Name": "missing-directory",
+          "ExitCode": 1,
+          "DurationMs": 840
+        },
+        {
+          "Name": "unc-rejected-before-io",
+          "ExitCode": 1,
+          "DurationMs": 452
+        }
+      ],
+      "execution_policies_unchanged": true,
+      "scope": "Function fixtures and Windows local inventory/report generation; not memoQ/S2S TLS enforcement or network capture."
+    }
+  ]
+}

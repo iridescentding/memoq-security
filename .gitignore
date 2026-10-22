@@ -1,0 +1,14 @@
+.DS_Store
+._*
+__pycache__/
+*.pyc
+EmudhraAudit-*/
+report.txt
+report.json
+*.log
+*.pfx
+*.p12
+*.key
+.env
+.env.*
+validation-private/
